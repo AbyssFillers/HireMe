@@ -1,5 +1,5 @@
 import React from 'react';
-
+import {Link, NavLink} from 'react-router-dom'
 function Navbar() {
   return (
     <div className='bg-gray-100 px-10 pt-20'>

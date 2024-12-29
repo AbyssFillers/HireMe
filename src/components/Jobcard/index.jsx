@@ -11,7 +11,7 @@ function JobListings() {
   ];
 
   return (
-    <div className='bg-gray-100 px-10 pb-20'>
+    <div className='bg-gray-100 px-10 '>
       {jobListings.map((job, index) => (
         <div key={index} className='px-6 py-4 bg-white border border-gray-300 rounded-lg mb-4'>
           <div className='flex justify-between items-center'>

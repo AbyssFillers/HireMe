@@ -4,17 +4,18 @@ import Navbar from './components/Navbar'
 import Header from './components/Header'
 import Searchbar from './components/SearchBar'
 import Jobcard from './components/Jobcard'
+import Footer from './components/Footer'
 
 function App() {
   const [count, setCount] = useState(0)
 
   return (
-    <div>
-      <Navbar/>
-      <Header/>
+    <>
+      {/* <Header/>
       <Searchbar/>
       <Jobcard/>
-    </div>
+      <Footer/> */}
+    </>
   )
 }
 
