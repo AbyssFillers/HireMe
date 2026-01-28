@@ -2,6 +2,6 @@ package internal
 
 import "context"
 
-func Authentication(ctx *Background.) {
+func Authentication(ctx *context.Context) {
 	
 }
