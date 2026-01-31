@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/AbyssFillers/HireMe.git/internal/controllers"
 	"github.com/AbyssFillers/HireMe.git/internal/db"
 	"github.com/gin-gonic/gin"
 )
@@ -20,6 +21,8 @@ func main() {
 	if err != nil {
 		log.Fatal("Failed to get underlying DB:", err)
 	}
+
+	authController := controllers.AuthController{DB: sqlDB}
 
 	defer func() {
 		if err := temp.Close(); err != nil {
@@ -34,7 +37,12 @@ func main() {
 			"message": "healthy",
 		})
 	})
-	router.POST("/signup")
+
+	authGroup := router.Group("/auth")
+	{
+		authGroup.POST("/signup", authController.SignUp)
+		authGroup.POST("/signin", authController.SignIn)
+	}
 
 	// Graceful Shutdown
 	srv := http.Server{
