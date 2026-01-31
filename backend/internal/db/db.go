@@ -3,6 +3,7 @@ package db
 import (
 	"log"
 	"os"
+
 	"github.com/AbyssFillers/HireMe.git/internal/models"
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
@@ -17,7 +18,7 @@ func InitDB() *gorm.DB {
 	dsn := os.Getenv("DSN")
 
 	db, err := gorm.Open(postgres.New(postgres.Config{
-		DSN: dsn,
+		DSN:                  dsn,
 		PreferSimpleProtocol: true,
 	}), &gorm.Config{})
 
@@ -25,14 +26,11 @@ func InitDB() *gorm.DB {
 		log.Fatal("Failed to connect to database:", err)
 	}
 
-	db.AutoMigrate(&models.User{},
+	db.AutoMigrate(
+		&models.User{},
 		&models.Job{},
-		&models.Application{})
-
-	if err != nil {
-		log.Fatal("Migration failed:", err)
-	}
-
+		&models.Application{},
+	)
 	log.Println("Database migrated successfully!")
 	return db
 }

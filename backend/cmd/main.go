@@ -1,7 +1,13 @@
 package main
 
 import (
+	"context"
+	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/AbyssFillers/HireMe.git/internal/db"
 	"github.com/gin-gonic/gin"
@@ -9,13 +15,50 @@ import (
 
 func main() {
 	router := gin.Default()
-	 db.InitDB()
+	sqlDB := db.InitDB()
+	temp, err := sqlDB.DB()
+	if err != nil {
+		log.Fatal("Failed to get underlying DB:", err)
+	}
+
+	defer func() {
+		if err := temp.Close(); err != nil {
+			log.Printf("Error closing DB: %v", err)
+		} else {
+			log.Println("Database connection closed")
+		}
+	}()
 
 	router.GET("/health", func(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, gin.H{
 			"message": "healthy",
 		})
 	})
-
 	router.POST("/signup")
+
+	// Graceful Shutdown
+	srv := http.Server{
+		Addr:    ":8000",
+		Handler: router,
+	}
+
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("listening: %s\n", err)
+		}
+	}()
+
+	quit := make(chan os.Signal, 1)
+
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	log.Println("Shutting down server...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Printf("Server forced to shutdown: %v\n", err)
+	}
+
+	log.Println("Server exiting")
 }
