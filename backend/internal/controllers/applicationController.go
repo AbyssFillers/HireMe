@@ -48,9 +48,6 @@ func (ac *ApplicationController) ApplyJob(c *gin.Context) {
 		return
 	}
 
-	// Determine Status
-	// If it's a native job, status is "applied".
-	// If it's an external link, we mark it "redirected" (or "interested") so the user knows they visited it.
 	initialStatus := "applied"
 	if job.SourceURL != "" {
 		initialStatus = "redirected"
@@ -73,7 +70,6 @@ func (ac *ApplicationController) ApplyJob(c *gin.Context) {
 		"status":  initialStatus,
 	})
 }
-
 
 // GET => /api/applications
 func (ac *ApplicationController) GetMyApplications(c *gin.Context) {

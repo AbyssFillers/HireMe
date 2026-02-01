@@ -12,6 +12,7 @@ import (
 	"github.com/AbyssFillers/HireMe.git/internal/controllers"
 	"github.com/AbyssFillers/HireMe.git/internal/db"
 	"github.com/AbyssFillers/HireMe.git/internal/middleware"
+	"github.com/AbyssFillers/HireMe.git/internal/worker"
 	"github.com/gin-gonic/gin"
 )
 
@@ -25,6 +26,7 @@ func main() {
 
 	authController := controllers.AuthController{DB: sqlDB}
 	userController := controllers.UserController{DB: sqlDB}
+	applicationController := controllers.ApplicationController{DB: sqlDB}
 
 	defer func() {
 		if err := temp.Close(); err != nil {
@@ -51,7 +53,14 @@ func main() {
 	{
 		protectedGroup.GET("/user/me", userController.GetProfile)
 		protectedGroup.PUT("/user/profile", userController.UpdateProfile)
+		protectedGroup.POST("/applications", applicationController.ApplyJob)
+		protectedGroup.GET("/applications", applicationController.GetMyApplications)
 	}
+
+	// --- INITIALIZE WORKER ---
+	worker := worker.JobWorker{DB: sqlDB}
+	worker.StartScheduler()
+	// -------------------------
 
 	// Graceful Shutdown
 	srv := http.Server{
