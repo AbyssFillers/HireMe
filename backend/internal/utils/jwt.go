@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"fmt"
+	"errors"
 	"os"
 	"time"
 
@@ -21,22 +21,30 @@ func GenerateToken(userID string) (string, error) {
 	return token.SignedString(jwtSecret)
 }
 
-func ValidateToken(tokenString string) (jwt.MapClaims, error) {
+func ValidateToken(tokenString string) (string, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			return nil, errors.New("unexpected signing method")
 		}
-
 		return jwtSecret, nil
 	})
 
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		return claims, nil
+		if float64(time.Now().Unix()) > claims["exp"].(float64) {
+			return "", errors.New("token expired")
+		}
+
+		userID, ok := claims["user_id"].(string)
+		if !ok {
+			return "", errors.New("invalid user_id claim")
+		}
+
+		return userID, nil
 	}
 
-	return nil, fmt.Errorf("invalid token")
+	return "", errors.New("invalid token")
 }
