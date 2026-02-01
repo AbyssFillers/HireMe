@@ -11,6 +11,7 @@ import (
 
 	"github.com/AbyssFillers/HireMe.git/internal/controllers"
 	"github.com/AbyssFillers/HireMe.git/internal/db"
+	"github.com/AbyssFillers/HireMe.git/internal/middleware"
 	"github.com/gin-gonic/gin"
 )
 
@@ -23,6 +24,7 @@ func main() {
 	}
 
 	authController := controllers.AuthController{DB: sqlDB}
+	userController := controllers.UserController{DB: sqlDB}
 
 	defer func() {
 		if err := temp.Close(); err != nil {
@@ -42,6 +44,13 @@ func main() {
 	{
 		authGroup.POST("/signup", authController.SignUp)
 		authGroup.POST("/signin", authController.SignIn)
+	}
+
+	protectedGroup := router.Group("/api")
+	protectedGroup.Use(middleware.AuthMiddleware())
+	{
+		protectedGroup.GET("/user/me", userController.GetProfile)
+		protectedGroup.PUT("/user/profile", userController.UpdateProfile)
 	}
 
 	// Graceful Shutdown

@@ -50,4 +50,73 @@ func (uc *UserController) GetProfile(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// PUT => /api/user/profile
+func (uc *UserController) UpdateProfile(c *gin.Context) {
+	var reqBody struct {
+		Name   string   `json:"name"`
+		Phone  string   `json:"phone"`
+		Bio    string   `json:"bio"`
+		Skills []string `json:"skills"`
+	}
 
+	if err := c.ShouldBindJSON(&reqBody); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+
+	userID, exists := c.Get("userID")
+
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	// Tx Started
+	tx := uc.DB.Begin()
+
+	if err := tx.Model(&models.User{}).Where("id=?", userID).Updates(models.User{
+		Name:  reqBody.Name,
+		Phone: reqBody.Phone,
+	}).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user info"})
+		return
+	}
+
+	var profile models.UserProfile
+
+	if err := tx.Where("user_id = ?", userID).First(&profile).Error; err != nil {
+		if err != gorm.ErrRecordNotFound {
+			tx.Rollback()
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
+			return
+		}
+
+		newProfile := models.UserProfile{
+			UserID: userID.(string),
+			Bio:    reqBody.Bio,
+			Skills: reqBody.Skills,
+		}
+		if err := tx.Create(&newProfile).Error; err != nil {
+			tx.Rollback()
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create profile"})
+			return
+		}
+	} else {
+		if err := tx.Model(&profile).Updates(models.UserProfile{
+			Bio:    reqBody.Bio,
+			Skills: reqBody.Skills,
+		}).Error; err != nil {
+			tx.Rollback()
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update profile"})
+			return
+		}
+	}
+
+	// Tx Commited
+	tx.Commit()
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Profile updated successfully",
+	})
+}
